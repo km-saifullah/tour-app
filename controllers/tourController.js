@@ -69,7 +69,7 @@ exports.updateTour = async (req, res) => {
       data: { tour },
     })
   } catch (error) {
-    res.status(400).json({
+    res.status(404).json({
       status: 'failed',
       message: 'Update Failed!',
     })
@@ -77,9 +77,18 @@ exports.updateTour = async (req, res) => {
 }
 
 // delete tour
-exports.deleteTour = (req, res) => {
-  res.status(204).json({
-    status: 'seccess',
-    data: null,
-  })
+exports.deleteTour = async (req, res) => {
+  try {
+    await Tour.findByIdAndDelete(req.params.id)
+
+    res.status(204).json({
+      status: 'seccess',
+      data: null,
+    })
+  } catch (error) {
+    res.status(404).json({
+      status: 'failed',
+      message: error,
+    })
+  }
 }
