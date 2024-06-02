@@ -16,16 +16,6 @@ if (process.env.NODE_ENV === 'development') {
 // for static file
 app.use(express.static(`${__dirname}/public`))
 
-app.use((req, res, next) => {
-  console.log('Hello from the middleware!')
-  next()
-})
-
-app.use((req, res, next) => {
-  req.requestTime = new Date().toISOString()
-  next()
-})
-
 app.use('/api/v1/tours', tourRouter)
 app.use('/api/v1/users', userRouter)
 
