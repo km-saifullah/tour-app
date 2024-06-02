@@ -9,7 +9,7 @@ const router = express.Router()
 router
   .route('/')
   .get(tourController.getAllTours)
-  .post(tourController.checkBody, tourController.createTour)
+  .post(tourController.createTour)
 
 // routes for /api/v1/tours/:id
 router
