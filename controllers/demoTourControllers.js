@@ -40,15 +40,72 @@ exports.getAllTours = (req, res) => {
 }
 
 // get a tour
-exports.getTour = (req, res) => {
+exports.getTour = async (req, res) => {
   const id = Number(req.params.id)
   const tour = tours.find((el) => el.id === id)
 
-  res.status(200).json({
-    status: 'success',
-    results: tours.length,
-    data: { tours: tour },
-  })
+  try {
+    // build query
+    // 1)basic filtering
+    // const queryObj = { ...req.query }
+    const queryObj = { ...this.queryString }
+    const excludedFields = ['page', 'sort', 'limit', 'fields']
+    excludedFields.forEach((element) => delete queryObj[element])
+    console.log(req.query, queryObj)
+
+    // 2) advance filtering
+    // {difficulty:"easy",duration:{$gte:5}}
+    let queryStr = JSON.stringify(queryObj)
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`)
+    // console.log(JSON.parse(queryString))
+
+    // const query = Tour.find(queryObj)
+    let query = Tour.find(JSON.parse(queryStr))
+
+    // 3) sorting
+    if (req.query.sort) {
+      const sortBy = req.query.sort.split(',').join(' ')
+      // query = query.sort(req.query.sort)
+      query = query.sort(sortBy)
+    } else {
+      query = query.sort('-createdAt')
+    }
+
+    // 4) field limiting
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ')
+      query = query.select(fields) // projecting
+    } else {
+      query = query.select('-__v')
+    }
+
+    // 5) pagination
+    const page = req.query.page * 1 || 1
+    const limit = req.query.limit * 1 || 100
+    const skip = (page - 1) * limit
+    query = query.skip(skip).limit(limit)
+
+    if (req.query.page) {
+      const numTours = await Tour.countDocuments()
+      if (skip > numTours) throw new Error('The page does not exist')
+    }
+
+    // execute the query
+    const features = new APIFeatures(Tour.find(), req.query).filter()
+    // const tours = await query
+    const tours = await features.query
+
+    res.status(200).json({
+      status: 'success',
+      results: tours.length,
+      data: { tours: tour },
+    })
+  } catch (error) {
+    res.status(404).json({
+      status: 'failed',
+      message: error.message,
+    })
+  }
 }
 
 // create tour
