@@ -12,6 +12,7 @@ router
   .get(tourController.aliasTopTour, tourController.getAllTours)
 
 router.route('/tour-stats').get(tourController.getTourStats)
+router.route('/montly-plan/:year').get(tourController.getMontlyPlan)
 
 router
   .route('/')

@@ -108,6 +108,7 @@ exports.deleteTour = async (req, res) => {
   }
 }
 
+// tour stats controller
 exports.getTourStats = async (req, res) => {
   try {
     const stats = await Tour.aggregate([
@@ -135,7 +136,59 @@ exports.getTourStats = async (req, res) => {
     ])
     res.status(200).json({
       status: 'seccess',
-      data: stats,
+      data: { stats },
+    })
+  } catch (error) {
+    res.status(404).json({
+      status: 'failed',
+      message: error,
+    })
+  }
+}
+
+// get montly plan controller
+exports.getMontlyPlan = async (req, res) => {
+  try {
+    const year = req.params.year * 1
+    const plan = await Tour.aggregate([
+      {
+        $unwind: '$startDates',
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$startDates' },
+          numToursStarts: { $sum: 1 },
+          tours: { $push: '$name' },
+        },
+      },
+      {
+        $addFields: { month: '$_id' },
+      },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+      {
+        $sort: { numToursStarts: -1 },
+      },
+      {
+        $limit: 12,
+      },
+    ])
+
+    res.status(200).json({
+      status: 'seccess',
+      result: plan.length,
+      data: { plan },
     })
   } catch (error) {
     res.status(404).json({
